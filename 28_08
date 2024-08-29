@@ -3,3 +3,5 @@
 Construa um circuito no tinkercad utilizando um Push button para acionar um semáforo. 
 O intervalo de tempo do Led vermelho deverá ser 2 segundos, do led verde 3 segundos e do led amarelo 1 segundo.
 Lembre-se de colocar um resistor com a respectiva resistência para cada LED e um resistor de 4K ohms para o push button.
+  
+![logo](https://github.com/michelLima04/TDS_SENAI--IOT/blob/main/Captura%20de%20tela%202024-08-28%20211703.png)   
