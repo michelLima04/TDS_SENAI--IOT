@@ -4,4 +4,34 @@ Construa um circuito no tinkercad utilizando um Push button para acionar um sem�
 O intervalo de tempo do Led vermelho deverá ser 2 segundos, do led verde 3 segundos e do led amarelo 1 segundo.
 Lembre-se de colocar um resistor com a respectiva resistência para cada LED e um resistor de 4K ohms para o push button.
   
-![logo](https://github.com/michelLima04/TDS_SENAI--IOT/blob/main/Captura%20de%20tela%202024-08-28%20211703.png)   
+ // C++ code
+
+  int buttonState = 0;
+  
+void setup()
+{
+  pinMode(1, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(3, OUTPUT);
+  pinMode(10, INPUT);
+}
+
+void loop()
+{
+  
+  buttonState = digitalRead(10); 
+  
+  if(buttonState == HIGH){
+      
+    digitalWrite(1,HIGH);//VERMELHO
+    delay(3000);
+    digitalWrite(1,LOW);
+    digitalWrite(2,HIGH);//AMARELO
+    delay(1000);
+    digitalWrite(2,LOW);
+    digitalWrite(3,HIGH);//VERDE
+    delay(2000);
+    digitalWrite(3,LOW);
+  }
+  
+}
