@@ -1,0 +1,78 @@
+#include <Wire.h>
+
+#include <Adafruit_GFX.h>
+
+#include <Adafruit_SH1106.h>
+
+
+
+#include <Fonts/FreeMono9pt7b.h>
+
+#include <Fonts/FreeSansBoldOblique9pt7b.h>
+
+#include <Fonts/FreeMonoOblique9pt7b.h>
+
+
+
+#define OLED_RESET -1
+
+
+
+Adafruit_SH1106 display(OLED_RESET);
+
+
+
+void setup() {
+
+  Serial.begin(9600);
+
+  display.begin(SH1106_SWITCHCAPVCC, 0x3C);
+
+}
+
+
+
+void loop() {
+
+  display.clearDisplay();
+
+
+
+  // Desenhar o sol
+
+  display.fillCircle(100, 15, 10, WHITE); // Sol
+
+  for (int i = 0; i < 12; i++) {
+
+    display.drawLine(100, 15, 100 + 20 * cos(i * 3.14 / 6), 15 + 20 * sin(i * 3.14 / 6), WHITE); // Raios do sol
+
+  }
+
+
+
+  // Desenhar montanhas
+
+  display.fillTriangle(10, 60, 50, 20, 90, 60, WHITE); // Montanha 1
+
+  display.fillTriangle(30, 60, 80, 10, 130, 60, WHITE); // Montanha 2
+
+
+
+  // Texto na tela
+
+  display.setFont(&FreeMonoOblique9pt7b);
+
+  display.setTextColor(WHITE);
+
+  display.setTextSize(1);
+
+  display.setCursor(35, 10);
+
+  display.print("");
+
+
+
+  display.display();
+
+}
+
