@@ -1,17 +1,30 @@
-const int pinoSensor = 2; 
-const int pinoLed = 13;
- 
+const int sensorPin = 2; 
+const int ledPins[] = {10, 11, 12, 13};
+const int numLeds = sizeof(ledPins) / sizeof(ledPins[0]);
+
+int currentLED = 0; 
+
 void setup() {
-  pinMode(pinoSensor, INPUT); 
-  pinMode(pinoLed, OUTPUT); 
-}
- 
-void loop() {
-  if (digitalRead(pinoSensor) == HIGH){ 
-    digitalWrite(pinoLed, HIGH); 
+  pinMode(sensorPin, INPUT);  
+  for (int i = 0; i < numLeds; i++) {
+    pinMode(ledPins[i], OUTPUT); 
   }
-  else{
-    digitalWrite(pinoLed,LOW);
-  } 
-  delay(200); 
+}
+
+void loop() {
+  if (digitalRead(sensorPin) == HIGH) {
+    currentLED = (currentLED + 1) % (numLeds + 1); 
+    updateLEDs();
+    delay(300); 
+  }
+}
+
+void updateLEDs() {
+  for (int i = 0; i < numLeds; i++) {
+    if (i < currentLED) {
+      digitalWrite(ledPins[i], HIGH); 
+    } else {
+      digitalWrite(ledPins[i], LOW);  
+    }
+  }
 }
