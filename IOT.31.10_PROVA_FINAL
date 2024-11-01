@@ -1,0 +1,244 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH1106.h>
+#include <MFRC522.h>
+#include <SPI.h>
+#include <Fonts/FreeMono9pt7b.h> //Fonte para alteração do texto;
+#include <Fonts/FreeSansBoldOblique9pt7b.h> //Fonte para alteração do texto;
+#include <Fonts/FreeMonoOblique9pt7b.h> //Fonte para alteração do texto;
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define SSD1306_I2C_ADDRESS 0x3C
+
+Adafruit_SH1106 display(OLED_RESET); // Criação do objeto do display
+
+const int LDR_PIN = A0;    // Pino do LDR
+const int TMP36_PIN = A1;  // Pino do TMP36
+const int BUZZER_PIN = 2;   // Pino do buzzer
+const int LDR_THRESHOLD = 100; // Limite de luminosidade para ativar o buzzer
+
+#define SS_PIN 10  // Pino de seleção de chip (SDA)
+#define RST_PIN 9   // Pino de reset
+
+MFRC522 mfrc522(SS_PIN, RST_PIN);  // Cria uma instância do MFRC522
+
+// ID do cartão permitido ou que quiser colocar (em formato hexadecimal)
+byte allowedCard[] = {0x96, 0x26, 0xD0, 0xF7}; // Seu cartão: 96 26 D0 F7
+
+float temperatureC;
+float temperatureK;
+
+bool displayInKelvin = false; // Variável para controle da exibição da temperatura
+
+bool screenInverted = false; // Variável para controle da inversão de cores
+
+
+void setup() {
+
+  pinMode(3, INPUT); //tecla1
+  pinMode(4, INPUT); //tecla2
+  pinMode(5, INPUT); //tecla3
+  pinMode(6, INPUT); //tecla4
+
+  Serial.begin(9600);
+  
+  // Inicializando o display OLED
+  display.begin(SSD1306_I2C_ADDRESS, OLED_RESET);
+  display.clearDisplay();
+  
+  // Configurando o buzzer como saída
+  pinMode(BUZZER_PIN, OUTPUT);
+  
+  // Configurando o pino do LDR como entrada
+  pinMode(LDR_PIN, INPUT);
+
+  display.begin(SH1106_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+
+  SPI.begin();          // Inicia o barramento SPI
+  mfrc522.PCD_Init();   // Inicia o MFRC522
+  
+}
+
+void loop() {
+
+  
+  // Verifica se um cartão está presente
+  if (mfrc522.PICC_IsNewCardPresent()) {
+    // Verifica se o cartão pode ser lido
+    if (mfrc522.PICC_ReadCardSerial()) {
+      // Exibe o ID do cartão
+      Serial.print("ID do cartão: ");
+      for (byte i = 0; i < mfrc522.uid.size; i++) {
+        Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+        Serial.print(mfrc522.uid.uidByte[i], HEX);
+      }
+      Serial.println();
+
+      // Verifica se o cartão é permitido
+      if (isCardAllowed(mfrc522.uid.uidByte, mfrc522.uid.size)) {
+        Serial.println("Acesso PERMITIDO.");
+        display.clearDisplay(); //Comando para limpar a tela;
+        display.setFont(&FreeMonoOblique9pt7b); //Comando para definir a fonte que será utilizada;
+        display.setTextColor(WHITE); //Comando para definir a cor do texto;
+        display.setTextSize(0); //Comando para definir tamanho od
+        //display.setFont(&FreeSansBoldOblique9pt7b);
+        display.setCursor(0, 25);
+        display.print("Acesso");
+        display.setCursor(0, 45);
+        display.print("PERMITIDO!");
+        display.display();
+        delay(2000);
+        
+        while(true){
+        display.clearDisplay(); //Comando para limpar a tela;
+        display.setCursor(0, 25);
+        display.print("OPCAO");
+        display.setCursor(65, 25);
+        display.print("OPCAO");
+        display.setCursor(0, 45);
+        display.print("  1");
+        display.setCursor(65, 45);
+        display.print("  2");
+        display.display();
+
+        
+        if(digitalRead(3) == HIGH){ //OPÇÃO 1 -> CONFIGURAÇÃO
+
+        display.clearDisplay(); //Comando para limpar a tela;
+        display.setCursor(0, 25);
+        display.print("OPCAO");
+        display.setCursor(65, 25);
+        display.print("OPCAO");
+        display.setCursor(0, 45);
+        display.print("  3");
+        display.setCursor(65, 45);
+        display.print("  4");
+        display.display();
+
+        while(true){
+
+        
+           if(digitalRead(5) == HIGH){ //OPÇÃO 3 -> MUDA A TELA
+
+            display.invertDisplay(true);
+            break;
+           }else if(digitalRead(6) == HIGH){
+
+           displayInKelvin = true; // Define para exibir em Kelvin
+
+            break;
+           }
+
+
+
+        }
+
+
+        
+        break;
+
+
+        }else if(digitalRead(4) == HIGH){ //OPÇÃO 2 VOLTA AO MENU PRINCIPAL
+           break;
+        }
+
+        }
+
+      } else {
+        Serial.println("Acesso NEGADO.");
+        display.clearDisplay(); //Comando para limpar a tela;
+        display.setFont(&FreeMonoOblique9pt7b); //Comando para definir a fonte que será utilizada;
+        display.setTextColor(WHITE); //Comando para definir a cor do texto;
+        display.setTextSize(0); //Comando para definir tamanho od
+        //display.setFont(&FreeSansBoldOblique9pt7b);
+        display.setCursor(0, 25);
+        display.print("Acesso");
+        display.setCursor(0, 45);
+        display.print("NEGADO!");
+        display.display();
+        delay(2000);
+      }
+
+      // Para de ler o cartão
+      mfrc522.PICC_HaltA();
+    }
+  }else{
+
+  // Lendo a temperatura do TMP36
+  int sensorValue = analogRead(TMP36_PIN);
+  float voltage = sensorValue * (5.0 / 1023.0); // Conversão para voltagem
+
+  celsius(voltage); // Passa a voltagem para a função
+  //float temperatureC = (voltage - 0.5) * 100; // Conversão para Celsius
+  temperatureK = celsiusToKelvin(temperatureC); // Converte Celsius para Kelvin
+
+  // Lendo o valor do LDR
+  int ldrValue = analogRead(LDR_PIN);
+  Serial.print("Luminosidade: ");
+  Serial.println(ldrValue);
+  Serial.print("Temperatura: ");
+  Serial.println(temperatureC);
+  Serial.print(" Kelvin: ");
+  Serial.println(temperatureK, 1); // Imprime Kelvin com uma casa decimal
+
+  display.clearDisplay(); //Comando para limpar a tela;
+  display.setFont(&FreeMonoOblique9pt7b); //Comando para definir a fonte que será utilizada;
+  display.setTextColor(WHITE); //Comando para definir a cor do texto;
+  display.setTextSize(0); //Comando para definir tamanho od
+  //display.setFont(&FreeSansBoldOblique9pt7b);
+  display.setCursor(0, 25);
+  display.print("Lum: ");
+  display.println(ldrValue);
+  display.setCursor(0, 45);
+  // Exibe a temperatura de acordo com a escolha do usuário
+    if (displayInKelvin) {
+      display.print("Temp:");
+      display.print(temperatureK, 1);
+      display.print("K");
+    } else {
+      display.print("Temp:");
+      display.print(temperatureC, 1);
+      display.print("C");
+    }
+  display.display();
+
+  // Verificando a luminosidade
+  if (ldrValue < 50) {
+    // Ativar o buzzer
+    tone(BUZZER_PIN, 5000, 3000); // Frequência de 1000 Hz
+    delay(500);
+    noTone(BUZZER_PIN);
+    delay(500);
+  }
+
+  delay(2000); // Atraso antes da próxima leitura
+  }
+}
+
+void celsius(float voltage) {
+  temperatureC = (voltage - 0.5) * 100; // Conversão para Celsius
+}
+
+float celsiusToKelvin(float tempC) {
+  return tempC + 273.15; // Conversão de Celsius para Kelvin
+}
+
+bool isCardAllowed(byte *cardUID, byte uidSize) {
+  // Compara o ID do cartão com o permitido
+  if (uidSize != sizeof(allowedCard)) {
+    return false; // Tamanhos diferentes não são permitidos
+  }
+  
+  for (byte i = 0; i < uidSize; i++) {
+    if (cardUID[i] != allowedCard[i]) {
+      return false; // IDs diferentes
+    }
+  }
+  return true; // IDs correspondem
+}
+
